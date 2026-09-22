@@ -22,6 +22,8 @@ class OneEuroFilter:
     def __call__(self, t, x):
         """Compute the filtered signal."""
         t_e = t - self.t_prev
+        if t_e <= 1e-5:
+            return self.x_prev
 
         # The filtered derivative of the signal.
         a_d = smoothing_factor(t_e, self.d_cutoff)

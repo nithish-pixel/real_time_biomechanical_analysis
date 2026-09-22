@@ -1,5 +1,5 @@
 import numpy as np
-from app.constants import PoseLandmark
+from constants import PoseLandmark
 
 def get_vector(landmarks, p1, p2):
     """Returns vector from p1 to p2."""

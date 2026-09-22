@@ -1,13 +1,14 @@
 import cv2
 import time
-from app.camera import ThreadedCamera
-from app.pose_tracker import PoseTracker
-from app.biomechanics import BiomechanicsEngine
-from app.metrics_collector import MetricsCollector
-from app.constants import POSE_CONNECTIONS
+from camera import ThreadedCamera
+from pose_tracker import PoseTracker
+from biomechanics import BiomechanicsEngine
+from metrics_collector import MetricsCollector
+from constants import POSE_CONNECTIONS
 
 def draw_hud(frame, metrics_collector, angles_results, landmarks_2d):
     """Overlays the HUD on the frame."""
+    h, w, _ = frame.shape
     
     # Draw connections
     if landmarks_2d:
@@ -20,7 +21,6 @@ def draw_hud(frame, metrics_collector, angles_results, landmarks_2d):
                 
                 # Check visibility for drawing (use 0.5 as drawing threshold, logic uses 0.65)
                 if p1['visibility'] > 0.5 and p2['visibility'] > 0.5:
-                    h, w, _ = frame.shape
                     x1, y1 = int(p1['x'] * w), int(p1['y'] * h)
                     x2, y2 = int(p2['x'] * w), int(p2['y'] * h)
                     cv2.line(frame, (x1, y1), (x2, y2), (255, 255, 255), 2)
@@ -28,7 +28,6 @@ def draw_hud(frame, metrics_collector, angles_results, landmarks_2d):
         # Draw points
         for idx, lm in landmarks_2d.items():
             if lm['visibility'] > 0.5:
-                h, w, _ = frame.shape
                 x, y = int(lm['x'] * w), int(lm['y'] * h)
                 cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
 
@@ -85,7 +84,19 @@ def draw_hud(frame, metrics_collector, angles_results, landmarks_2d):
         y_offset += 30
 
 def main():
-    camera = ThreadedCamera(0).start()
+    import argparse
+    parser = argparse.ArgumentParser(description="Real-Time Biomechanical Analysis")
+    parser.add_argument("--source", default="0", help="Camera index (0, 1, ...) or video file path")
+    args = parser.parse_args()
+
+    src = int(args.source) if args.source.isdigit() else args.source
+
+    try:
+        camera = ThreadedCamera(src).start()
+    except ValueError as e:
+        print(f"\n[Camera Initialization Error]:\n{e}\n")
+        return
+
     tracker = PoseTracker()
     engine = BiomechanicsEngine()
     metrics = MetricsCollector()

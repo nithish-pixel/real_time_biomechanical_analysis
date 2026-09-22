@@ -3,7 +3,7 @@ import os
 import urllib.request
 import numpy as np
 import mediapipe as mp
-from app.filter import OneEuroFilter3D
+from filter import OneEuroFilter3D
 
 class PoseTracker:
     def __init__(self, static_image_mode=False, min_detection_confidence=0.5, min_tracking_confidence=0.5):
@@ -32,13 +32,19 @@ class PoseTracker:
         self.filters = {} # Map landmark index to OneEuroFilter3D
         self.t0 = time.time()
         
-    def process(self, frame_rgb, timestamp_ms):
+    def process(self, frame_rgb, timestamp_ms=None):
         """
         Process the RGB frame, track pose, and return filtered world landmarks 
         and raw 2D landmarks for drawing.
         """
         start_time = time.perf_counter()
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+        
+        if timestamp_ms is None:
+            timestamp_ms = int((time.time() - self.t0) * 1000)
+        if hasattr(self, '_last_timestamp_ms') and timestamp_ms <= self._last_timestamp_ms:
+            timestamp_ms = self._last_timestamp_ms + 1
+        self._last_timestamp_ms = timestamp_ms
         
         try:
             results = self.landmarker.detect_for_video(mp_image, timestamp_ms)
